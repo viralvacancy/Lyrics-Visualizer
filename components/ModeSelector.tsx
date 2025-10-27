@@ -7,7 +7,7 @@ interface ModeSelectorProps {
 }
 
 const modes: { id: VisualMode; name: string }[] = [
-  { id: 'rain', name: 'Rain' },
+  { id: 'aurora', name: 'Aurora' },
   { id: 'ember', name: 'Ember' },
   { id: 'neon', name: 'Neon' },
   { id: 'kinetic', name: 'Kinetic' },
