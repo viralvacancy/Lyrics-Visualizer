@@ -102,34 +102,36 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ track, onEnded }) => {
     }
   };
   
-  if (!track) return <div className="h-[96px] bg-gray-900/30 backdrop-blur-sm border-t border-gray-700/50 flex items-center justify-center text-gray-500">No track selected.</div>;
+  if (!track) return <div className="h-[110px] bg-gradient-to-r from-white/5 via-white/10 to-transparent backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center justify-center text-gray-300 shadow-[0_25px_60px_rgba(5,5,25,0.45)]">No track selected.</div>;
 
   return (
-    <div className="h-[96px] bg-gray-900/30 backdrop-blur-sm border-t border-gray-700/50 p-4 flex items-center gap-4 text-white">
+    <div className="h-[110px] bg-gradient-to-r from-white/5 via-white/10 to-transparent backdrop-blur-2xl border border-white/10 rounded-2xl px-5 py-4 flex items-center gap-5 text-white shadow-[0_25px_60px_rgba(5,5,25,0.45)]">
       <audio ref={audioRef} />
-      <div className="w-16 h-16 bg-gray-700 rounded-md flex-shrink-0"></div>
-      <div className="flex-grow flex flex-col justify-center gap-1 min-w-0">
-        <p className="font-semibold truncate">{track.name}</p>
+      <div className="w-20 h-20 rounded-xl flex-shrink-0 bg-gradient-to-br from-purple-500/60 to-blue-500/40 shadow-[0_15px_35px_rgba(168,85,247,0.35)] flex items-center justify-center">
+        <PlayIcon className="w-8 h-8 text-white/80" />
+      </div>
+      <div className="flex-grow flex flex-col justify-center gap-2 min-w-0">
+        <p className="font-semibold truncate tracking-wide">{track.name}</p>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
+          <span className="text-xs text-gray-300 font-mono">{formatTime(currentTime)}</span>
           <input
             type="range"
             min="0"
             max={duration || 0}
             value={currentTime}
             onChange={handleSeek}
-            className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer range-sm accent-purple-500"
+            className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-purple-500"
           />
-          <span className="text-xs text-gray-400">{formatTime(duration)}</span>
+          <span className="text-xs text-gray-300 font-mono">{formatTime(duration)}</span>
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <button onClick={togglePlayPause} className="p-2 rounded-full bg-purple-600 hover:bg-purple-500 transition-colors">
+        <button onClick={togglePlayPause} className="p-3 rounded-full bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-500 hover:to-pink-500 transition-all shadow-[0_10px_30px_rgba(168,85,247,0.35)]">
           {isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6" />}
         </button>
-        <div className="flex items-center gap-2">
-            <button onClick={toggleMute}>
-                {isMuted || volume === 0 ? <VolumeMuteIcon className="w-6 h-6 text-gray-400" /> : <VolumeUpIcon className="w-6 h-6 text-gray-400" />}
+        <div className="flex items-center gap-3">
+            <button onClick={toggleMute} className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+                {isMuted || volume === 0 ? <VolumeMuteIcon className="w-6 h-6 text-gray-200" /> : <VolumeUpIcon className="w-6 h-6 text-gray-200" />}
             </button>
             <input
                 type="range"
@@ -138,7 +140,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ track, onEnded }) => {
                 step="0.01"
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
-                className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer range-sm accent-purple-500"
+                className="w-28 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-purple-500"
             />
         </div>
       </div>
