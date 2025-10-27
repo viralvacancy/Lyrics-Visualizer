@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Lyric Visualizer",
+  "description": "An application to upload audio, generate synchronized lyric files using a simulated AI, and experience a dynamic visual playback of the lyrics. Choose from multiple visual effect modes.",
+  "requestFramePermissions": []
+}
