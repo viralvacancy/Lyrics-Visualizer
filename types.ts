@@ -9,4 +9,4 @@ export interface LyricLine {
   text: string;
 }
 
-export type VisualMode = 'rain' | 'ember' | 'kinetic' | 'neon' | 'focus' | 'terminal';
+export type VisualMode = 'aurora' | 'ember' | 'kinetic' | 'neon' | 'focus' | 'terminal';
