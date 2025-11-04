@@ -19,16 +19,26 @@ const fileToBase64 = async (file: File): Promise<string> => {
   return base64EncodedDataPromise;
 };
 
-export const transcribeAudio = async (audioFile: File, apiKey?: string | null): Promise<string> => {
-    const resolvedApiKey = apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+export const transcribeAudio = async (audioFile: File): Promise<string> => {
+  const audioData = await fileToBase64(audioFile);
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
 
-    if (!resolvedApiKey) {
-        throw new Error('A Gemini API key is required for transcription but was not provided.');
-    }
+  const apiKey = getStoredApiKey();
+  if (apiKey) {
+    headers['x-api-key'] = apiKey;
+  }
 
-    const ai = new GoogleGenAI({ apiKey: resolvedApiKey });
-
-    const audioPart = await fileToGenerativePart(audioFile);
+  try {
+    const response = await fetch('/.netlify/functions/transcribe', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        audio: audioData,
+        mimeType: audioFile.type,
+      }),
+    });
 
     if (!response.ok) {
       throw new Error(response.statusText || 'API error');
