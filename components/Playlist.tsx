@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Track } from '../types';
 import { MusicNoteIcon, TrashIcon, PlusIcon, PencilIcon, DownloadIcon } from './Icons';
+import ApiKeySettings from './ApiKeySettings';
 
 interface PlaylistProps {
   tracks: Track[];
@@ -15,15 +16,16 @@ interface PlaylistProps {
 const Playlist: React.FC<PlaylistProps> = ({ tracks, currentTrackIndex, onSelectTrack, onClear, onAddMore, onEditTrack, onDownloadTrack }) => {
   return (
     <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-2xl p-5 lg:p-6 flex flex-col h-full overflow-hidden border border-white/10 shadow-[0_25px_60px_rgba(15,15,45,0.45)]">
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-white font-orbitron tracking-[0.2em] uppercase">Playlist</h2>
-        <div className="flex items-center gap-2">
-            <button onClick={onAddMore} className="text-gray-300 hover:text-green-400 transition-all duration-300 p-1.5 rounded-full bg-white/5 hover:bg-white/10" title="Add More Songs">
-                <PlusIcon className="w-5 h-5" />
-            </button>
-            <button onClick={onClear} disabled={tracks.length === 0} className="text-gray-300 hover:text-red-400 disabled:text-gray-600 disabled:cursor-not-allowed transition-all duration-300 p-1.5 rounded-full bg-white/5 hover:bg-white/10" title="Clear Playlist">
-                <TrashIcon className="w-5 h-5" />
-            </button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ApiKeySettings />
+          <button onClick={onAddMore} className="text-gray-300 hover:text-green-400 transition-all duration-300 p-1.5 rounded-full bg-white/5 hover:bg-white/10" title="Add More Songs">
+            <PlusIcon className="w-5 h-5" />
+          </button>
+          <button onClick={onClear} disabled={tracks.length === 0} className="text-gray-300 hover:text-red-400 disabled:text-gray-600 disabled:cursor-not-allowed transition-all duration-300 p-1.5 rounded-full bg-white/5 hover:bg-white/10" title="Clear Playlist">
+            <TrashIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
       <div className="overflow-y-auto flex-grow pr-2 -mr-2 space-y-3">

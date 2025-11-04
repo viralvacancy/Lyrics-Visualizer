@@ -19,7 +19,13 @@ const handler: Handler = async (event) => {
     };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  const headerKey =
+    event.headers?.['x-api-key'] ||
+    event.headers?.['X-Api-Key'] ||
+    event.headers?.['x-api-Key'] ||
+    event.headers?.['X-API-KEY'];
+
+  const apiKey = (headerKey as string | undefined)?.trim() || process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey) {
     console.error("Missing GEMINI_API_KEY environment variable");
     return {
