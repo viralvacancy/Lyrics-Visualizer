@@ -53,12 +53,26 @@ const Playlist: React.FC<PlaylistProps> = ({ tracks, currentTrackIndex, onSelect
                 <span className="truncate flex-grow font-medium tracking-wide">{track.name}</span>
               </div>
               <div className="flex-shrink-0 flex items-center gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); onEditTrack(index); }} className="p-1.5 text-gray-300 hover:text-blue-300 rounded-full transition-colors" title="Edit Lyrics">
-                      <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); onDownloadTrack(index); }} className="p-1.5 text-gray-300 hover:text-green-300 rounded-full transition-colors" title="Download .lrc file">
-                      <DownloadIcon className="w-4 h-4" />
-                  </button>
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditTrack(index);
+                  }}
+                  className="p-1.5 text-gray-300 hover:text-blue-300 rounded-full transition-colors"
+                  title="Edit Lyrics"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDownloadTrack(index);
+                  }}
+                  className="p-1.5 text-gray-300 hover:text-green-300 rounded-full transition-colors"
+                  title="Download .lrc file"
+                >
+                  <DownloadIcon className="w-4 h-4" />
+                </button>
               </div>
             </button>
           );

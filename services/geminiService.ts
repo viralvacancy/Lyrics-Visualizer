@@ -58,3 +58,4 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
     return `[00:00.00]Transcription failed: API error.`;
   }
 };
+
