@@ -1,3 +1,5 @@
+import { getStoredApiKey } from '../utils/apiKeyStorage';
+
 // Helper to convert File to base64 for sending to the Netlify function
 const fileToBase64 = async (file: File): Promise<string> => {
   const base64EncodedDataPromise = new Promise<string>((resolve, reject) => {
@@ -18,13 +20,20 @@ const fileToBase64 = async (file: File): Promise<string> => {
 };
 
 export const transcribeAudio = async (audioFile: File): Promise<string> => {
+  const audioData = await fileToBase64(audioFile);
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  const apiKey = getStoredApiKey();
+  if (apiKey) {
+    headers['x-api-key'] = apiKey;
+  }
+
   try {
-    const audioData = await fileToBase64(audioFile);
     const response = await fetch('/.netlify/functions/transcribe', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         audio: audioData,
         mimeType: audioFile.type,
@@ -32,8 +41,7 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
     });
 
     if (!response.ok) {
-      console.error('Transcription request failed:', response.statusText);
-      return `[00:00.00]Transcription failed: API error.`;
+      throw new Error(response.statusText || 'API error');
     }
 
     const data: { lrcContent?: string; error?: string } = await response.json();
@@ -44,8 +52,14 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
     }
 
     console.warn('Gemini response was not in expected LRC format:', lrcContent);
-    return `[00:00.00]Transcription failed: Invalid format.`;
+    throw new Error('Invalid format');
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'API error';
+
+    if (message === 'Invalid format') {
+      return `[00:00.00]Transcription failed: Invalid format.`;
+    }
+
     console.error('Error transcribing audio with Gemini:', error);
     return `[00:00.00]Transcription failed: API error.`;
   }
