@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Track, VisualMode } from './types';
 import FileUpload from './components/FileUpload';
 import Playlist from './components/Playlist';
@@ -8,11 +8,14 @@ import ModeSelector from './components/ModeSelector';
 import LrcEditorModal from './components/LrcEditorModal';
 import { extractFilesFromArchive } from './services/archiveService';
 import { transcribeAudio } from './services/geminiService';
-import { saveLrc, loadLrc } from './utils/localStorage';
+import { saveLrc, loadLrc, loadApiKeyFromStorage, saveApiKeyToStorage, clearStoredApiKey } from './utils/localStorage';
 import { downloadLrcFile } from './utils/fileDownloader';
 import { LoadingSpinner } from './components/Icons';
+import ApiKeyModal from './components/ApiKeyModal';
 
 function App() {
+  const envApiKey = useMemo(() => process.env.GEMINI_API_KEY || process.env.API_KEY || '', []);
+  const storedApiKey = useMemo(() => loadApiKeyFromStorage(), []);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,43 +23,116 @@ function App() {
   const [visualMode, setVisualMode] = useState<VisualMode>('focus');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [trackToEdit, setTrackToEdit] = useState<{ index: number, track: Track } | null>(null);
+  const [apiKey, setApiKey] = useState<string>(storedApiKey ?? '');
+  const [isApiKeyPersisted, setIsApiKeyPersisted] = useState<boolean>(Boolean(storedApiKey));
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const pendingApiKeyPromiseRef = useRef<{ resolve: (value: string) => void; reject: (reason?: unknown) => void } | null>(null);
+
+  const requestApiKey = useCallback((): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      pendingApiKeyPromiseRef.current = { resolve, reject };
+      setIsApiKeyModalOpen(true);
+    });
+  }, []);
+
+  const handleApiKeySave = useCallback((newKey: string, persist: boolean) => {
+    setApiKey(newKey);
+    setIsApiKeyPersisted(persist);
+
+    if (persist) {
+      saveApiKeyToStorage(newKey);
+    } else {
+      clearStoredApiKey();
+    }
+
+    setIsApiKeyModalOpen(false);
+    if (pendingApiKeyPromiseRef.current) {
+      pendingApiKeyPromiseRef.current.resolve(newKey);
+      pendingApiKeyPromiseRef.current = null;
+    }
+  }, []);
+
+  const handleApiKeyModalClose = useCallback(() => {
+    setIsApiKeyModalOpen(false);
+    if (pendingApiKeyPromiseRef.current) {
+      pendingApiKeyPromiseRef.current.reject(new Error('API key entry cancelled'));
+      pendingApiKeyPromiseRef.current = null;
+    }
+  }, []);
+
+  const handleClearStoredKey = useCallback(() => {
+    clearStoredApiKey();
+    setIsApiKeyPersisted(false);
+    setApiKey('');
+  }, []);
+
+  const hasCustomApiKey = Boolean(apiKey);
+  const hasEnvApiKey = !hasCustomApiKey && Boolean(envApiKey);
+  const apiKeyStatusLabel = hasCustomApiKey
+    ? 'Custom key active'
+    : hasEnvApiKey
+      ? 'Using env key'
+      : 'Key required';
+  const apiKeyStatusClass = hasCustomApiKey
+    ? 'text-emerald-300'
+    : hasEnvApiKey
+      ? 'text-blue-200'
+      : 'text-amber-300';
+
+  const handleManageApiKey = () => {
+    setIsApiKeyModalOpen(true);
+  };
 
   const processFiles = useCallback(async (files: File[]) => {
+    let activeApiKey = apiKey || envApiKey;
+    const requiresTranscription = files.some(file => !loadLrc(file.name));
+
+    if (requiresTranscription && !activeApiKey) {
+      try {
+        activeApiKey = await requestApiKey();
+      } catch (error) {
+        throw error;
+      }
+    }
+
     setIsLoading(true);
     const newTracks: Track[] = [];
-    
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setLoadingMessage(`Processing ${i + 1}/${files.length}: ${file.name}`);
 
-        const cachedLrc = loadLrc(file.name);
-        let lrc = cachedLrc;
+    try {
+      for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          setLoadingMessage(`Processing ${i + 1}/${files.length}: ${file.name}`);
 
-        if (!lrc) {
-            setLoadingMessage(`Transcribing ${file.name}... This may take a moment.`);
-            try {
-                lrc = await transcribeAudio(file);
-                saveLrc(file.name, lrc);
-            } catch (error) {
-                console.error(`Failed to transcribe ${file.name}:`, error);
-                lrc = `[00:00.00]Transcription failed for ${file.name}.`;
-            }
-        }
-        
-        newTracks.push({
-            name: file.name,
-            audioUrl: URL.createObjectURL(file),
-            lrc: lrc,
-        });
+          const cachedLrc = loadLrc(file.name);
+          let lrc = cachedLrc;
+
+          if (!lrc) {
+              setLoadingMessage(`Transcribing ${file.name}... This may take a moment.`);
+              try {
+                  lrc = await transcribeAudio(file, activeApiKey);
+                  saveLrc(file.name, lrc);
+              } catch (error) {
+                  console.error(`Failed to transcribe ${file.name}:`, error);
+                  lrc = `[00:00.00]Transcription failed for ${file.name}.`;
+              }
+          }
+
+          newTracks.push({
+              name: file.name,
+              audioUrl: URL.createObjectURL(file),
+              lrc: lrc,
+          });
+      }
+
+      setTracks(prev => [...prev, ...newTracks]);
+      if (currentTrackIndex === null && newTracks.length > 0) {
+        setCurrentTrackIndex(0);
+      }
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
     }
-    
-    setTracks(prev => [...prev, ...newTracks]);
-    if (currentTrackIndex === null && newTracks.length > 0) {
-      setCurrentTrackIndex(0);
-    }
-    setIsLoading(false);
-    setLoadingMessage('');
-  }, [currentTrackIndex]);
+  }, [apiKey, envApiKey, currentTrackIndex, requestApiKey]);
 
   const handleFilesSelected = async (fileList: FileList) => {
     const files = Array.from(fileList);
@@ -72,7 +148,12 @@ function App() {
     });
 
     if (audioFiles.length > 0) {
-      await processFiles(audioFiles);
+      try {
+        await processFiles(audioFiles);
+      } catch (error) {
+        console.warn('Audio processing cancelled:', error);
+        return;
+      }
     }
     
     for (const archive of archiveFiles) {
@@ -180,6 +261,16 @@ function App() {
           <div className="absolute top-6 left-8 z-20">
               <ModeSelector currentMode={visualMode} onModeChange={setVisualMode} />
           </div>
+          <div className="absolute top-6 right-8 z-20">
+            <button
+              type="button"
+              onClick={handleManageApiKey}
+              className="group rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-900/30 transition hover:border-purple-400 hover:bg-black/60"
+            >
+              <span className="block text-xs uppercase tracking-wider text-gray-400 group-hover:text-gray-200">Gemini API</span>
+              <span className={`block text-sm font-medium ${apiKeyStatusClass}`}>{apiKeyStatusLabel}</span>
+            </button>
+          </div>
         </main>
         <footer className="flex-shrink-0 px-4 pb-6 lg:px-6">
           <AudioPlayer track={currentTrack} onEnded={handleNextTrack} />
@@ -192,6 +283,14 @@ function App() {
             onSave={(newLrc) => handleSaveLrc(trackToEdit.index, newLrc)}
           />
         )}
+        <ApiKeyModal
+          isOpen={isApiKeyModalOpen}
+          initialValue={apiKey}
+          isPersisted={isApiKeyPersisted}
+          onSave={handleApiKeySave}
+          onClose={handleApiKeyModalClose}
+          onClearStoredKey={handleClearStoredKey}
+        />
       </div>
       <style>{`
         @keyframes orbit-slow {
