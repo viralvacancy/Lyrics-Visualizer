@@ -1,3 +1,5 @@
+import { getStoredApiKey } from '../utils/apiKeyStorage';
+
 // Helper to convert File to base64 for sending to the Netlify function
 const fileToBase64 = async (file: File): Promise<string> => {
   const base64EncodedDataPromise = new Promise<string>((resolve, reject) => {
@@ -29,8 +31,7 @@ export const transcribeAudio = async (audioFile: File, apiKey?: string | null): 
     const audioPart = await fileToGenerativePart(audioFile);
 
     if (!response.ok) {
-      console.error('Transcription request failed:', response.statusText);
-      return `[00:00.00]Transcription failed: API error.`;
+      throw new Error(response.statusText || 'API error');
     }
 
     const data: { lrcContent?: string; error?: string } = await response.json();
@@ -47,3 +48,4 @@ export const transcribeAudio = async (audioFile: File, apiKey?: string | null): 
     return `[00:00.00]Transcription failed: API error.`;
   }
 };
+
