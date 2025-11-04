@@ -12,9 +12,14 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
-export const transcribeAudio = async (audioFile: File): Promise<string> => {
-    // FIX: Initialize GoogleGenAI with a named apiKey parameter from environment variables.
-    const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+export const transcribeAudio = async (audioFile: File, apiKey?: string | null): Promise<string> => {
+    const resolvedApiKey = apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+
+    if (!resolvedApiKey) {
+        throw new Error('A Gemini API key is required for transcription but was not provided.');
+    }
+
+    const ai = new GoogleGenAI({ apiKey: resolvedApiKey });
 
     const audioPart = await fileToGenerativePart(audioFile);
 
