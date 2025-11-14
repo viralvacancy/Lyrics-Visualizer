@@ -52,8 +52,14 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
     }
 
     console.warn('Gemini response was not in expected LRC format:', lrcContent);
-    return `[00:00.00]Transcription failed: Invalid format.`;
+    throw new Error('Invalid format');
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'API error';
+
+    if (message === 'Invalid format') {
+      return `[00:00.00]Transcription failed: Invalid format.`;
+    }
+
     console.error('Error transcribing audio with Gemini:', error);
     return `[00:00.00]Transcription failed: API error.`;
   }
