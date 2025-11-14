@@ -36,15 +36,25 @@ const Playlist: React.FC<PlaylistProps> = ({ tracks, currentTrackIndex, onSelect
         )}
         {tracks.map((track, index) => {
           const isActive = index === currentTrackIndex;
+          const baseClasses =
+            'w-full text-left p-4 rounded-xl flex items-center justify-between gap-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400/70 focus:ring-offset-2 focus:ring-offset-slate-900';
+          const variantClasses = isActive
+            ? 'bg-gradient-to-r from-purple-600/70 via-purple-500/40 to-pink-500/40 text-white shadow-[0_20px_40px_rgba(168,85,247,0.35)] hover:-translate-y-0.5'
+            : 'bg-white/5 text-gray-200 hover:bg-white/10 hover:-translate-y-0.5';
+
           return (
-            <button
+            <div
               key={index}
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectTrack(index)}
-              className={`w-full text-left p-4 rounded-xl flex items-center justify-between gap-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400/70 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-                isActive
-                  ? 'bg-gradient-to-r from-purple-600/70 via-purple-500/40 to-pink-500/40 text-white shadow-[0_20px_40px_rgba(168,85,247,0.35)] hover:-translate-y-0.5'
-                  : 'bg-white/5 text-gray-200 hover:bg-white/10 hover:-translate-y-0.5'
-              }`}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectTrack(index);
+                }
+              }}
+              className={`${baseClasses} ${variantClasses}`}
             >
               <div className="flex items-center gap-3 truncate">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white/10'}`}>
@@ -53,14 +63,30 @@ const Playlist: React.FC<PlaylistProps> = ({ tracks, currentTrackIndex, onSelect
                 <span className="truncate flex-grow font-medium tracking-wide">{track.name}</span>
               </div>
               <div className="flex-shrink-0 flex items-center gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); onEditTrack(index); }} className="p-1.5 text-gray-300 hover:text-blue-300 rounded-full transition-colors" title="Edit Lyrics">
-                      <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); onDownloadTrack(index); }} className="p-1.5 text-gray-300 hover:text-green-300 rounded-full transition-colors" title="Download .lrc file">
-                      <DownloadIcon className="w-4 h-4" />
-                  </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditTrack(index);
+                  }}
+                  className="p-1.5 text-gray-300 hover:text-blue-300 rounded-full transition-colors"
+                  title="Edit Lyrics"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDownloadTrack(index);
+                  }}
+                  className="p-1.5 text-gray-300 hover:text-green-300 rounded-full transition-colors"
+                  title="Download .lrc file"
+                >
+                  <DownloadIcon className="w-4 h-4" />
+                </button>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
