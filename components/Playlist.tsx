@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Track } from '../types';
 import { MusicNoteIcon, TrashIcon, PlusIcon, PencilIcon, DownloadIcon } from './Icons';
-import ApiKeySettings from './ApiKeySettings';
 
 interface PlaylistProps {
   tracks: Track[];
@@ -15,76 +14,79 @@ interface PlaylistProps {
 
 const Playlist: React.FC<PlaylistProps> = ({ tracks, currentTrackIndex, onSelectTrack, onClear, onAddMore, onEditTrack, onDownloadTrack }) => {
   return (
-    <div className="bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-2xl p-5 lg:p-6 flex flex-col h-full overflow-hidden border border-white/10 shadow-[0_25px_60px_rgba(15,15,45,0.45)]">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold text-white font-orbitron tracking-[0.2em] uppercase">Playlist</h2>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <ApiKeySettings />
-          <button onClick={onAddMore} className="text-gray-300 hover:text-green-400 transition-all duration-300 p-1.5 rounded-full bg-white/5 hover:bg-white/10" title="Add More Songs">
-            <PlusIcon className="w-5 h-5" />
-          </button>
-          <button onClick={onClear} disabled={tracks.length === 0} className="text-gray-300 hover:text-red-400 disabled:text-gray-600 disabled:cursor-not-allowed transition-all duration-300 p-1.5 rounded-full bg-white/5 hover:bg-white/10" title="Clear Playlist">
-            <TrashIcon className="w-5 h-5" />
-          </button>
+    <div className="flex flex-col h-full overflow-hidden relative">
+      <div className="p-5 border-b border-white/10 bg-black/20 backdrop-blur-md">
+        <div className="flex justify-between items-center mb-2">
+            <h2 className="text-sm font-bold text-gray-100 font-orbitron tracking-widest uppercase flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                Playlist
+            </h2>
+            <div className="flex items-center gap-1">
+                <button onClick={onAddMore} className="text-gray-400 hover:text-white hover:bg-white/10 transition-all p-1.5 rounded-md group" title="Add More Songs">
+                    <PlusIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
+                <button onClick={onClear} disabled={tracks.length === 0} className="text-gray-400 hover:text-red-400 hover:bg-red-400/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all p-1.5 rounded-md group" title="Clear Playlist">
+                    <TrashIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
+            </div>
+        </div>
+        <div className="flex justify-between items-end">
+            <p className="text-xs text-gray-500 font-medium">{tracks.length} TRACKS</p>
         </div>
       </div>
-      <div className="overflow-y-auto flex-grow pr-2 -mr-2 space-y-3">
+
+      <div className="overflow-y-auto flex-grow p-3 custom-scrollbar space-y-1">
         {tracks.length === 0 && (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm text-center px-4">
-            <p>Upload a track to begin building your immersive lyric journey.</p>
+          <div className="flex flex-col items-center justify-center h-40 text-gray-600 gap-3 mt-10">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                <MusicNoteIcon className="w-8 h-8 opacity-40" />
+            </div>
+            <p className="text-sm font-medium">Queue is empty</p>
           </div>
         )}
         {tracks.map((track, index) => {
           const isActive = index === currentTrackIndex;
-          const baseClasses =
-            'w-full text-left p-4 rounded-xl flex items-center justify-between gap-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400/70 focus:ring-offset-2 focus:ring-offset-slate-900';
-          const variantClasses = isActive
-            ? 'bg-gradient-to-r from-purple-600/70 via-purple-500/40 to-pink-500/40 text-white shadow-[0_20px_40px_rgba(168,85,247,0.35)] hover:-translate-y-0.5'
-            : 'bg-white/5 text-gray-200 hover:bg-white/10 hover:-translate-y-0.5';
-
           return (
             <div
               key={index}
-              role="button"
-              tabIndex={0}
               onClick={() => onSelectTrack(index)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onSelectTrack(index);
-                }
-              }}
-              className={`${baseClasses} ${variantClasses}`}
+              className={`group relative w-full text-left p-3 rounded-lg flex items-center justify-between gap-3 transition-all duration-300 cursor-pointer border ${
+                isActive
+                  ? 'bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)] translate-x-1'
+                  : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10 hover:translate-x-1'
+              }`}
             >
-              <div className="flex items-center gap-3 truncate">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white/10'}`}>
-                  <MusicNoteIcon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-pink-200' : 'text-gray-300'}`} />
+              <div className="flex items-center gap-4 truncate flex-grow">
+                {isActive ? (
+                    <div className="w-4 h-4 flex items-end justify-center gap-0.5">
+                        <div className="w-1 bg-purple-400 animate-[bounce_1s_infinite] h-2"></div>
+                        <div className="w-1 bg-purple-400 animate-[bounce_1.2s_infinite] h-3"></div>
+                        <div className="w-1 bg-purple-400 animate-[bounce_0.8s_infinite] h-1.5"></div>
+                    </div>
+                ) : (
+                    <span className="text-xs text-gray-600 font-mono w-4 text-center group-hover:text-gray-400 transition-colors">{index + 1}</span>
+                )}
+                <div className="flex flex-col truncate">
+                    <span className={`truncate text-sm font-medium transition-colors ${isActive ? 'text-purple-200' : 'text-gray-300 group-hover:text-white'}`}>{track.name}</span>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium group-hover:text-gray-400">Local Audio</span>
                 </div>
-                <span className="truncate flex-grow font-medium tracking-wide">{track.name}</span>
               </div>
-              <div className="flex-shrink-0 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onEditTrack(index);
-                  }}
-                  className="p-1.5 text-gray-300 hover:text-blue-300 rounded-full transition-colors"
-                  title="Edit Lyrics"
-                >
-                  <PencilIcon className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onDownloadTrack(index);
-                  }}
-                  className="p-1.5 text-gray-300 hover:text-green-300 rounded-full transition-colors"
-                  title="Download .lrc file"
-                >
-                  <DownloadIcon className="w-4 h-4" />
-                </button>
+              
+              <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onEditTrack(index); }} 
+                    className="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-md transition-colors" 
+                    title="Edit Lyrics"
+                  >
+                      <PencilIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onDownloadTrack(index); }} 
+                    className="p-1.5 text-gray-400 hover:text-green-400 hover:bg-green-400/10 rounded-md transition-colors" 
+                    title="Download .lrc"
+                  >
+                      <DownloadIcon className="w-3.5 h-3.5" />
+                  </button>
               </div>
             </div>
           );

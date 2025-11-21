@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -16,20 +17,53 @@
     "react/": "https://aistudiocdn.com/react@^19.1.1/",
     "react": "https://aistudiocdn.com/react@^19.1.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "@google/genai": "https://esm.run/@google/genai"
+    "@google/genai": "https://esm.run/@google/genai",
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js"
   }
 }
 </script>
 <style>
     body {
         font-family: 'Exo 2', sans-serif;
+        background-color: #050505;
     }
     .font-orbitron {
         font-family: 'Orbitron', sans-serif;
     }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2); 
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15); 
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(168, 85, 247, 0.5); 
+    }
+
+    /* Selection Color */
+    ::selection {
+        background: rgba(192, 38, 211, 0.4); /* Purple/Pink */
+        color: white;
+    }
+    
+    /* Utility for hiding scrollbar but allowing scroll */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 </head>
-  <body class="bg-gray-900 text-white">
+  <body class="bg-black text-white overflow-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

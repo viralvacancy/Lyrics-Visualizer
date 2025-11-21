@@ -1,3 +1,4 @@
+
 export interface Track {
   name: string;
   audioUrl: string;
@@ -9,4 +10,10 @@ export interface LyricLine {
   text: string;
 }
 
-export type VisualMode = 'aurora' | 'ember' | 'kinetic' | 'neon' | 'focus' | 'terminal';
+export type VisualizerPalette = 'cyber' | 'sunset' | 'matrix' | 'ocean';
+export type BackgroundEffect = 'none' | 'stars' | 'fluid' | 'grid';
+
+export interface VisualizerSettings {
+    palette: VisualizerPalette;
+    bgEffect: BackgroundEffect;
+}
