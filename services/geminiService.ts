@@ -1,49 +1,55 @@
-import { GoogleGenAI } from "@google/genai";
+type TranscriptionResponse = {
+  text?: string;
+  error?: string;
+};
 
 // Helper to convert File to base64 for the Gemini API
-const fileToGenerativePart = async (file: File) => {
+const fileToBase64Payload = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
     reader.readAsDataURL(file);
   });
+
   return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+    data: await base64EncodedDataPromise,
+    mimeType: file.type,
   };
 };
 
 export const transcribeAudio = async (audioFile: File): Promise<string> => {
-    // FIX: Initialize GoogleGenAI with a named apiKey parameter from environment variables.
-    const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+  const audioPayload = await fileToBase64Payload(audioFile);
 
-    const audioPart = await fileToGenerativePart(audioFile);
+  try {
+    const response = await fetch('/.netlify/functions/transcribe-audio', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(audioPayload),
+    });
 
-    const prompt = `You are a highly accurate audio transcription service.
-    Transcribe the provided audio file and generate lyrics in LRC format.
-    LRC format includes timestamps for each line, like [mm:ss.xx].
-    If the audio has no lyrics, just return "[00:00.00]Instrumental".
-    If transcription is not possible, return "[00:00.00]Transcription failed."`;
-
-    try {
-        // FIX: Use ai.models.generateContent with the correct model and multimodal contents.
-        const result = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: { parts: [audioPart, { text: prompt }] },
-        });
-        
-        // FIX: Extract text directly from the response.text property.
-        const lrcContent = result.text.trim();
-        
-        // Basic validation to ensure the response looks like LRC format.
-        if (lrcContent.startsWith('[') && lrcContent.includes(']')) {
-            return lrcContent;
-        } else {
-            console.warn("Gemini response was not in expected LRC format:", lrcContent);
-            return `[00:00.00]Transcription failed: Invalid format.`;
-        }
-
-    } catch (error) {
-        console.error('Error transcribing audio with Gemini:', error);
-        return `[00:00.00]Transcription failed: API error.`;
+    if (!response.ok) {
+      throw new Error(`Transcription failed with status ${response.status}`);
     }
+
+    const data = (await response.json()) as TranscriptionResponse;
+
+    if (data.error) {
+      console.error('Error transcribing audio with Gemini:', data.error);
+      return `[00:00.00]Transcription failed: API error.`;
+    }
+
+    const lrcContent = data.text?.trim() ?? '';
+
+    if (lrcContent.startsWith('[') && lrcContent.includes(']')) {
+      return lrcContent;
+    }
+
+    console.warn('Gemini response was not in expected LRC format:', lrcContent);
+    return `[00:00.00]Transcription failed: Invalid format.`;
+  } catch (error) {
+    console.error('Error transcribing audio with Gemini:', error);
+    return `[00:00.00]Transcription failed: API error.`;
+  }
 };
