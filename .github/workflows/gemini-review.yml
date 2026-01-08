@@ -1,0 +1,33 @@
+name: Gemini PR Review
+
+on:
+  # Use pull_request_target so the workflow can access repo secrets safely.
+  # We intentionally do NOT checkout the PR head to avoid running untrusted code from forks.
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch: {}
+
+jobs:
+  gemini-review:
+    name: Gemini Code Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      # Do NOT checkout the pull request head (this prevents running fork code with secrets)
+      # If you need file contents from the PR to be analyzed, we fetch the files via the API (the action below will do so).
+      - name: Gemini Code Reviewer
+        uses: Swisyn/gemini-ai-code-reviewer@v1.0.1
+        with:
+          # GitHub token provided by Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Usually the public GitHub API URL; change only for GitHub Enterprise
+          GITHUB_API_URL: https://api.github.com
+          # Create this secret in the repo: Settings → Secrets and variables → Actions → New repository secret
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Optional: model name; default for the action is appropriate but you can specify
+          GEMINI_MODEL: gemini-2.0-flash-001
+          # Optional: comma-separated globs to exclude from review
+          EXCLUDE: node_modules,dist
