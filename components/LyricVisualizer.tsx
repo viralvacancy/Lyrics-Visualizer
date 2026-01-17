@@ -480,7 +480,7 @@ const LyricVisualizer: React.FC<LyricVisualizerProps> = ({ track, settings }) =>
                     textShadow: '0 20px 50px rgba(0,0,0,0.9)' // Deep shadow to pop from bg
                 }}
             >
-                {(currentLine?.text || '...').split(' ').map((word, i) => {
+                {useMemo(() => (currentLine?.text || '...').split(' ').map((word, i) => {
                     const animIndex = (word.length + i) % animations.length;
                     const colorIndex = (word.length + i) % currentColors.length;
                     
@@ -496,7 +496,7 @@ const LyricVisualizer: React.FC<LyricVisualizerProps> = ({ track, settings }) =>
                             {word}
                         </span>
                     )
-                })}
+                }), [currentLine, currentKey, currentColors, settings])}
             </div>
             
             {/* Next Line Preview */}
