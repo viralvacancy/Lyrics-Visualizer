@@ -9,6 +9,7 @@ If transcription is not possible, return "[00:00.00]Transcription failed."`;
 type RequestPayload = {
   data?: string;
   mimeType?: string;
+  apiKey?: string;
 };
 
 export const handler = async (event: { httpMethod?: string; body?: string }) => {
@@ -19,15 +20,18 @@ export const handler = async (event: { httpMethod?: string; body?: string }) => 
     };
   }
 
-  if (!process.env.API_KEY) {
+  const payload = event.body ? (JSON.parse(event.body) as RequestPayload) : {};
+  const { data, mimeType, apiKey: userApiKey } = payload;
+
+  // Use user provided key or fallback to environment variable
+  const apiKey = userApiKey || process.env.API_KEY;
+
+  if (!apiKey) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Missing API_KEY environment variable.' }),
+      body: JSON.stringify({ error: 'Missing API Key. Please provide one or configure the server.' }),
     };
   }
-
-  const payload = event.body ? (JSON.parse(event.body) as RequestPayload) : {};
-  const { data, mimeType } = payload;
 
   if (!data || !mimeType) {
     return {
@@ -37,7 +41,7 @@ export const handler = async (event: { httpMethod?: string; body?: string }) => 
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {

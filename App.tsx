@@ -7,11 +7,12 @@ import LyricVisualizer from './components/LyricVisualizer';
 import AudioPlayer from './components/AudioPlayer';
 import VisualizerControls from './components/ModeSelector'; // Repurposed component
 import LrcEditorModal from './components/LrcEditorModal';
+import ApiKeyModal from './components/ApiKeyModal';
 import { extractFilesFromArchive } from './services/archiveService';
 import { transcribeAudio } from './services/geminiService';
 import { saveLrc, loadLrc } from './utils/localStorage';
 import { downloadLrcFile } from './utils/fileDownloader';
-import { LoadingSpinner } from './components/Icons';
+import { LoadingSpinner, SettingsIcon } from './components/Icons';
 
 function App() {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -24,6 +25,8 @@ function App() {
       bgEffect: 'stars'
   });
 
+  const [apiKey, setApiKey] = useState('');
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [trackToEdit, setTrackToEdit] = useState<{ index: number, track: Track } | null>(null);
 
@@ -41,7 +44,7 @@ function App() {
         if (!lrc) {
             setLoadingMessage(`Transcribing ${file.name}... This may take a moment.`);
             try {
-                lrc = await transcribeAudio(file);
+                lrc = await transcribeAudio(file, apiKey);
                 saveLrc(file.name, lrc);
             } catch (error) {
                 console.error(`Failed to transcribe ${file.name}:`, error);
@@ -173,7 +176,14 @@ function App() {
 
               {showUploader && (
                 <div className="absolute inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center p-8 z-30">
-                  <div className="w-full max-w-lg animate-fade-in-up">
+                  <div className="w-full max-w-lg animate-fade-in-up relative">
+                    <button
+                      onClick={() => setIsApiKeyModalOpen(true)}
+                      className="absolute top-0 right-0 p-2 text-gray-400 hover:text-white transition-colors"
+                      title="API Key Settings"
+                    >
+                      <SettingsIcon />
+                    </button>
                     <h1 className="text-5xl font-bold font-orbitron text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">GEMINI AUDIO</h1>
                     <p className="text-center text-gray-400 mb-10 tracking-wide text-sm">AI-POWERED LYRIC SYNCHRONIZATION & VISUALIZER</p>
                     <FileUpload onFilesSelected={handleFilesSelected} disabled={isLoading} />
@@ -206,6 +216,16 @@ function App() {
       <footer className="flex-shrink-0 relative z-50">
         <AudioPlayer track={currentTrack} onEnded={handleNextTrack} />
       </footer>
+
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        onSave={(key) => {
+          setApiKey(key);
+          setIsApiKeyModalOpen(false);
+        }}
+        currentKey={apiKey}
+      />
 
       {isEditorOpen && trackToEdit && (
         <LrcEditorModal
