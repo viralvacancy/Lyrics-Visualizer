@@ -17,8 +17,12 @@ const fileToBase64Payload = async (file: File) => {
   };
 };
 
-export const transcribeAudio = async (audioFile: File): Promise<string> => {
+export const transcribeAudio = async (audioFile: File, apiKey?: string): Promise<string> => {
   const audioPayload = await fileToBase64Payload(audioFile);
+  const payload = {
+    ...audioPayload,
+    apiKey,
+  };
 
   try {
     const response = await fetch('/.netlify/functions/transcribe-audio', {
@@ -26,7 +30,7 @@ export const transcribeAudio = async (audioFile: File): Promise<string> => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(audioPayload),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
