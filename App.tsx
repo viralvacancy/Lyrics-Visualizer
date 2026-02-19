@@ -13,6 +13,7 @@ import { transcribeAudio } from './services/geminiService';
 import { saveLrc, loadLrc } from './utils/localStorage';
 import { downloadLrcFile } from './utils/fileDownloader';
 import { LoadingSpinner, SettingsIcon } from './components/Icons';
+import { limitConcurrency } from './utils/concurrency';
 
 function App() {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -32,17 +33,18 @@ function App() {
 
   const processFiles = useCallback(async (files: File[]) => {
     setIsLoading(true);
-    const newTracks: Track[] = [];
+    setLoadingMessage(`Starting processing of ${files.length} files...`);
+    let completedCount = 0;
+    const totalFiles = files.length;
     
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setLoadingMessage(`Processing ${i + 1}/${files.length}: ${file.name}`);
+    // Concurrency limiter for 3 concurrent tasks
+    const limit = limitConcurrency(3);
 
+    const processSingleFile = async (file: File): Promise<Track> => {
         const cachedLrc = loadLrc(file.name);
         let lrc = cachedLrc;
 
         if (!lrc) {
-            setLoadingMessage(`Transcribing ${file.name}... This may take a moment.`);
             try {
                 lrc = await transcribeAudio(file, apiKey);
                 saveLrc(file.name, lrc);
@@ -52,20 +54,33 @@ function App() {
             }
         }
         
-        newTracks.push({
+        return {
             name: file.name,
             audioUrl: URL.createObjectURL(file),
-            lrc: lrc,
-        });
-    }
+            lrc: lrc || '',
+        };
+    };
+
+    const promises = files.map(file => limit(async () => {
+        const track = await processSingleFile(file);
+        completedCount++;
+        setLoadingMessage(`Processed ${completedCount}/${totalFiles}: ${file.name}`);
+        return track;
+    }));
     
-    setTracks(prev => [...prev, ...newTracks]);
-    if (currentTrackIndex === null && newTracks.length > 0) {
-      setCurrentTrackIndex(0);
+    try {
+        const newTracks = await Promise.all(promises);
+        setTracks(prev => [...prev, ...newTracks]);
+        if (currentTrackIndex === null && newTracks.length > 0) {
+            setCurrentTrackIndex(0);
+        }
+    } catch (error) {
+        console.error("Error processing files batch:", error);
+    } finally {
+        setIsLoading(false);
+        setLoadingMessage('');
     }
-    setIsLoading(false);
-    setLoadingMessage('');
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, apiKey]);
 
   const handleFilesSelected = async (fileList: FileList) => {
     const files = Array.from(fileList);
